@@ -42,7 +42,7 @@ npm install
 
 ## Step 2: Domain Setup
 
-For this deployment, we use a Route 53 hosted zone for the subdomain `dify.geoprofessional.org`.
+For this deployment, we do not use a Route 53 hosted zone for the subdomain but if you did, follow below.
 
 ### DNS Configuration
 
@@ -53,8 +53,6 @@ aws route53 create-hosted-zone \
   --name dify.geoprofessional.org \
   --caller-reference $(date +%s)
 ```
-
-*This is done*
 
 **Step 2**: At your **domain provider** (not AWS), create NS records to delegate the subdomain to Route 53:
 ```
@@ -85,7 +83,7 @@ export const props: EnvironmentProps = {
 };
 ```
 
-**Result**: `https://dify.geoprofessional.org`
+**Result**: `https://dify.mydomain.org`
 
 ## Step 3: Optional Access Control
 
