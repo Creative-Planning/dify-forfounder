@@ -1,5 +1,24 @@
 # ForFounders Dify Deployment Documentation
 
+## ⚠️ CURRENT DEPLOYMENT STATUS
+
+**Currently Deployed Version:** Commit `e74a75c` ("fresh deployment")
+
+**Pending Changes (NOT YET DEPLOYED):**
+The domain configuration changes in this repository have **not been deployed yet**. The current running deployment:
+- Does NOT have the delegated subdomain configuration in CDK
+- May have manual CloudFormation changes applied on top by ForFounders admin
+
+**Action Required Before Next Deployment:**
+1. ForFounders to review the new delegated subdomain approach in `bin/cdk.ts`
+2. Identify any CloudFormation templates or manual changes applied outside this CDK project
+3. Consider consolidating all infrastructure into this CDK project for consistency
+4. Coordinate with ForFounders admin to set up NS record delegation in external DNS
+
+See the [forfounder-dify-deploy](https://github.com/ForFounder/forfounder-dify-deploy) repository for any additional CloudFormation templates that may have been applied.
+
+---
+
 ## Overview
 
 This CDK project deploys Dify (an AI workflow automation platform) on AWS for ForFounders organization. The deployment uses AWS CDK to provision all necessary infrastructure including ECS, RDS Aurora, ElastiCache Redis, CloudFront, and ALB.
@@ -8,21 +27,48 @@ This CDK project deploys Dify (an AI workflow automation platform) on AWS for Fo
 
 **Production URL:** https://dify-prod.forfounder.com
 
-### Domain Setup
-- **Domain:** forfounder.com (hosted in Route53)
-- **Subdomain:** dify-prod
-- **CloudFront Distribution:** d2v8xc2bgav7gf.cloudfront.net
+### Domain Setup (Delegated Subdomain)
 
-The domain configuration is set in `bin/cdk.ts`:
+ForFounders uses a **delegated subdomain** approach because the parent domain `forfounder.com` is hosted externally (not in AWS Route53):
+
+1. **Route53 Hosted Zone:** AWS creates a hosted zone for `dify-prod.forfounder.com`
+2. **External DNS:** ForFounders admin configures NS records in their external DNS provider
+3. **CDK Configuration:** Set in `bin/cdk.ts`:
+
 ```typescript
-domainName: 'forfounder.com',
-subDomain: 'dify-prod',
+domainName: 'dify-prod.forfounder.com',  // Full delegated subdomain
+subDomain: '',  // Empty = use apex of hosted zone
 ```
 
-This ensures that:
+### DNS Delegation Steps
+
+**Step 1:** Deploy CDK to create the Route53 hosted zone:
+```bash
+cdk deploy --all
+```
+
+**Step 2:** Get the Route53 name servers for the new hosted zone:
+```bash
+aws route53 list-hosted-zones --region us-east-1 | grep -A 10 "dify-prod.forfounder.com"
+```
+
+**Step 3:** ForFounders admin adds NS records to their external DNS:
+```
+Name: dify-prod
+Type: NS
+Values: [Name servers from Step 2]
+  ns-XXX.awsdns-XX.com.
+  ns-XXX.awsdns-XX.net.
+  ns-XXX.awsdns-XX.org.
+  ns-XXX.awsdns-XX.co.uk.
+```
+
+### How It Works
+
 - All Dify environment variables (CONSOLE_WEB_URL, CONSOLE_API_URL, APP_WEB_URL) are set to `https://dify-prod.forfounder.com`
-- Route53 A record is automatically created pointing to CloudFront
+- Route53 A record (apex) points to CloudFront distribution
 - SSL/TLS certificate is provisioned via ACM
+- CloudFront Distribution: d2v8xc2bgav7gf.cloudfront.net
 
 **IMPORTANT:** Always access Dify via https://dify-prod.forfounder.com, NOT via the CloudFront URL directly. The app is configured to expect the custom domain for proper authentication and session management.
 
@@ -97,7 +143,10 @@ This separate repository is used for **app/workflow migration** between dev and 
 - **GitHub Actions:** Automated workflow deployment pipeline
 - **CloudFormation Templates:** Snapshots only (in `deployAWS/`), not for direct deployment
 
-**Do NOT use the CloudFormation templates in forfounder-dify-deploy for infrastructure changes.** Always use this CDK repository as the source of truth for infrastructure.
+**IMPORTANT: Infrastructure Management**
+- **CloudFormation templates in forfounder-dify-deploy repo for infrastructure have been deployed on top of this setup**
+- ForFounders admin has applied CloudFormation changes on top of the CDK deployment, consider migrating those changes into this CDK project for better consistency and maintainability, or dropping this CDK deployment.
+- Having multiple infrastructure-as-code tools managing the same resources can lead to drift and conflicts
 
 ## Troubleshooting
 

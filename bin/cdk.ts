@@ -14,8 +14,10 @@ export const props: EnvironmentProps = {
   difyPluginDaemonImageTag: '0.3.3-local',
 
   // ForFounders domain configuration
-  domainName: 'forfounder.com',
-  subDomain: 'dify-prod',
+  // Create Route53 hosted zone for the full delegated subdomain
+  // External DNS for forfounder.com needs NS records pointing to this zone
+  domainName: 'dify-prod.forfounder.com',
+  subDomain: '',  // Empty to use the apex of the hosted zone
 
   // uncomment the below options for less expensive configuration:
   isRedisMultiAz: false,
