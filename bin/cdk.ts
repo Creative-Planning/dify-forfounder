@@ -13,6 +13,10 @@ export const props: EnvironmentProps = {
   // Set plugin-daemon version to stable release
   difyPluginDaemonImageTag: '0.3.3-local',
 
+  // ForFounders domain configuration
+  domainName: 'forfounder.com',
+  subDomain: 'dify-prod',
+
   // uncomment the below options for less expensive configuration:
   isRedisMultiAz: false,
   useNatInstance: true,
